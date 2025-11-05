@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://use.typekit.net/tnr1shx.css">
+    <style>
+        /* --- Base & Typography --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: "univers-next-pro", sans-serif;
+            font-weight: 500;
+            font-style: normal;
+            overflow: hidden; /* Prevents scrollbars */
+        }
+
+        body {
+            position: relative;
+            background-color: #000; /* Standardmäßig schwarz */
+            transition: background-color 180ms ease-out;
+        }
+
+        .big-font {
+            font-weight: normal;
+            font-size: 21px;
+            line-height: 105%;
+            color: #B3B3B3;
+            transition: color 180ms ease-out;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* --- Layout --- */
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            
+            /*
+             * NEUE LOGIK:
+             * Alle Layer sind standardmäßig voll sichtbar (opacity: 1).
+             * Die Transition wirkt nur auf die Opazität.
+            */
+            opacity: 1;
+            transition: opacity 400ms ease-in-out;
+            background-color: transparent;
+            z-index: 1; /* Standardmäßig unten */
+        }
+
+        .bg-layer.active {
+             /* Die aktive Schicht liegt oben drüber */
+            z-index: 2;
+        }
+
+        .content-wrapper {
+            position: absolute;
+            inset: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 5;
+        }
+
+        .center-text {
+            text-align: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .right-text {
+            text-align: right;
+            gap: 1.5ch;
+            display: flex;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            color: #B3B3B3;
+            font-size: 16px;
+            line-height: 105%;
+            z-index: 10;
+            transition: color 180ms ease-out;
+        }
+
+        .mobile-header {
+            display: none;
+            padding: 10px;
+        }
+
+        /* --- Effects --- */
+        /* Wir verwenden die ursprüngliche ::before/::after Logik */
+        .bg-layer::before,
+        .bg-layer::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            transition: opacity 180ms ease-out;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-image: var(--bg-image);
+            background-position: var(--bg-position);
+        }
+
+        /* Regular background effect */
+        .bg-layer::before {
+            background-image: var(--bg-image-regular);
+            background-position: var(--bg-position);
+            background-blend-mode: color, difference, normal, normal;
+            opacity: 1;
+        }
+
+        /* Hover background effect */
+        .bg-layer::after {
+            background-image: var(--bg-image-hover);
+            background-position: var(--bg-position);
+            background-blend-mode: difference, color, difference, normal, normal;
+            opacity: 0;
+        }
+
+        /* State change on hover */
+        body.title-hovered {
+            background-color: #fff; /* Weiß bei Hover */
+        }
+
+        body.title-hovered .bg-layer::after {
+            opacity: 1;
+        }
+
+        body.title-hovered .big-font,
+        body.title-hovered footer {
+            color: #828282;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 1000px) {
+            .content-wrapper .left-text,
+            .content-wrapper .right-text {
+                display: none;
+            }
+
+            .content-wrapper {
+                justify-content: center;
+            }
+
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+                position: relative;
+                z-index: 10;
+            }
+
+            .mobile-right-text {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="bg-layer"></div>
+
+    <div class="mobile-header">
+        <div class="mobile-left-text">
+            <p id="location-mobile" class="big-font"></p>
+        </div>
+        <div class="mobile-right-text">
+            <a id="mobile-instagram-link" class="big-font" href="" target="_blank" rel="noopener noreferrer"></a>
+            <a id="mobile-email-link" class="big-font" href=""></a>
+        </div>
+    </div>
+    <div class="content-wrapper">
+        <div class="left-text">
+            <p id="location-desktop" class="big-font"></p>
+        </div>
+        <div class="center-text">
+            <h1 id="page-title" class="big-font"></h1>
+        </div>
+        <div class="right-text">
+            <a id="instagram-link" class="big-font" href="" target="_blank" rel="noopener noreferrer"></a>
+            <a id="email-link" class="big-font" href=""></a>
+        </div>
+    </div>
+
+    <footer>
+        <p id="footer-text"></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // --- 1. Configuration & Data ---
+            const IMAGE_CHANGE_INTERVAL = 80000000; // 8 seconds – deaktiviert
+            const backgroundImages = [
+                { url: 'material/image_01.webp', position: '49% 32%' },
+                { url: 'material/image_02.webp', position: '64% 26%' },
+                { url: 'material/image_03.webp', position: '50% 50%' },
+                { url: 'material/image_04.webp', position: '50% 50%' },
+                { url: 'material/image_05.webp', position: '35% 50%' },
+                { url: 'material/image_06.webp', position: '50% 50%' }
+            ];
+
+            const backgroundEffects = {
+                regular: [
+                    { color: '#7f7f7f', mode: 'color' },
+                    { color: '#ffffff', mode: 'difference' },
+                    { color: 'rgba(232, 232, 232, 0.91)', mode: 'normal' }
+                ],
+                hover: [
+                    { color: '#FAFAFA', mode: 'difference' },
+                    { color: '#7f7f7f', mode: 'color' },
+                    { color: '#ffffff', mode: 'difference' },
+                    { color: 'rgba(232, 232, 232, 0.91)', mode: 'normal' }
+                ]
+            };
+
+            const content = {
+                pageTitle: 'rotor studio',
+                locationDesktop: 'basel, switzerland',
+                locationMobile: 'basel, ch',
+                instagramHandle: '@rotor.studio',
+                instagramUrl: 'https://www.instagram.com/rotor.studio',
+                emailAddress: 'mail@rotorstudio.com',
+                footerText: 'rotor studio embraces a dynamic, cross-disciplinary design approach—engaging in project-based partnerships with creatives from architecture, industrial design, fashion, and beyond. Working across material research, spatial scenography, and product design, every project is a catalyst—a uniquecollaborative process, purpose-led and context-driven. Get in touch.'
+            };
+
+            // --- 2. DOM Elements ---
+            const elements = {
+                pageTitle: document.getElementById('page-title'),
+                bgLayers: document.querySelectorAll('.bg-layer'),
+                locationDesktop: document.getElementById('location-desktop'),
+                instagramLink: document.getElementById('instagram-link'),
+                emailLink: document.getElementById('email-link'),
+                locationMobile: document.getElementById('location-mobile'),
+                mobileInstagramLink: document.getElementById('mobile-instagram-link'),
+                mobileEmailLink: document.getElementById('mobile-email-link'),
+                footerText: document.getElementById('footer-text')
+            };
+
+            // --- 3. State ---
+            let currentImageIndex = 0;
+            let activeLayerIndex = 0;
+            let imageTimer;
+            let isChanging = false; // Sperrvariable, um Klick-Spam zu verhindern
+
+            // --- 4. Functions ---
+            
+            // Die applyBackground Funktion ist wieder das Original
+            function applyBackground(layer, image) {
+                const regularGradients = backgroundEffects.regular.map(e => `linear-gradient(${e.color}, ${e.color})`).join(', ');
+                const hoverGradients = backgroundEffects.hover.map(e => `linear-gradient(${e.color}, ${e.color})`).join(', ');
+                
+                const regularBgImage = `${regularGradients}, url('${image.url}')`;
+                const hoverBgImage = `${hoverGradients}, url('${image.url}')`;
+
+                layer.style.setProperty('--bg-image-regular', regularBgImage);
+                layer.style.setProperty('--bg-image-hover', hoverBgImage);
+                layer.style.setProperty('--bg-position', image.position);
+            }
+
+            // NEUE changeImage FUNKTION
+            function changeImage() {
+                if (backgroundImages.length < 2 || isChanging) return;
+                isChanging = true;
+
+                const oldLayerIndex = activeLayerIndex;
+                const newLayerIndex = 1 - activeLayerIndex;
+                currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
+
+                const oldLayer = elements.bgLayers[oldLayerIndex]; // z-index: 2 (active)
+                const newLayer = elements.bgLayers[newLayerIndex]; // z-index: 1
+                const newImage = backgroundImages[currentImageIndex];
+
+                // 1. Das NEUE Bild auf die UNTERE Ebene legen.
+                //    Diese ist bereits (opacity: 1), aber verdeckt.
+                applyBackground(newLayer, newImage);
+                newLayer.style.opacity = 1; // Sicherstellen, dass sie sichtbar ist
+
+                // 2. Event-Listener für das Ende der Transition
+                function onFadeOutComplete() {
+                    // 4. Aufräumen: Die ALTE Ebene nach unten (z-index 1) verschieben
+                    oldLayer.classList.remove('active');
+                    // Die NEUE Ebene nach oben (z-index 2) holen
+                    newLayer.classList.add('active');
+                    
+                    isChanging = false; // Sperre aufheben
+                    oldLayer.removeEventListener('transitionend', onFadeOutComplete);
+                }
+                
+                oldLayer.addEventListener('transitionend', onFadeOutComplete);
+
+                // 3. Die OBERE (alte) Ebene ausblenden, um die untere zu enthüllen.
+                oldLayer.style.opacity = 0;
+
+                // 5. Index für den nächsten Klick aktualisieren
+                activeLayerIndex = newLayerIndex;
+            }
+
+
+            function resetImageTimer() {
+                clearInterval(imageTimer);
+                imageTimer = setInterval(changeImage, IMAGE_CHANGE_INTERVAL);
+            }
+
+            function populateContent() {
+                elements.pageTitle.textContent = content.pageTitle;
+                elements.locationDesktop.textContent = content.locationDesktop;
+                elements.instagramLink.href = content.instagramUrl;
+                elements.instagramLink.textContent = content.instagramHandle;
+                elements.emailLink.href = 'mailto:' + content.emailAddress;
+                elements.emailLink.textContent = content.emailAddress;
+                elements.locationMobile.textContent = content.locationMobile;
+                elements.mobileInstagramLink.href = content.instagramUrl;
+                elements.mobileInstagramLink.textContent = content.instagramHandle;
+                elements.mobileEmailLink.href = 'mailto:' + content.emailAddress;
+                elements.mobileEmailLink.textContent = content.emailAddress;
+                elements.footerText.textContent = content.footerText;
+            }
+
+            function initializeEventListeners() {
+                // Hover effect for the title
+                elements.pageTitle.addEventListener('mouseenter', () => document.body.classList.add('title-hovered'));
+                elements.pageTitle.addEventListener('mouseleave', () => document.body.classList.remove('title-hovered'));
+
+                // Click to change image
+                document.body.addEventListener('click', (event) => {
+                    // Ignore clicks on links
+                    if (event.target.closest('a') || isChanging) {
+                        return;
+                    }
+                    
+                    changeImage();
+                    resetImageTimer();
+                });
+            }
+
+            function initialize() {
+                populateContent();
+
+                if (backgroundImages.length > 0) {
+                    // Set initial image
+                    const initialImage = backgroundImages[0];
+                    const initialLayer = elements.bgLayers[0];
+                    applyBackground(initialLayer, initialImage);
+                    
+                    // WICHTIG: Die Logik vom Original wiederherstellen
+                    initialLayer.classList.add('active');
+                    activeLayerIndex = 0;
+                    
+                    // Sicherstellen, dass die andere Ebene bereit ist
+                    elements.bgLayers[1].style.opacity = 1;
+
+
+                    // Start timer if there's more than one image
+                    if (backgroundImages.length > 1) {
+                        resetImageTimer();
+                    }
+                }
+                
+                initializeEventListeners();
+            }
+
+            // --- 5. Initialization ---
+            initialize();
+        });
+    </script>
+    
+</body>
+</html>
