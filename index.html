@@ -209,20 +209,24 @@
             
             // --- 1. Configuration & Data ---
             const IMAGE_CHANGE_INTERVAL = 80000000; // 8 seconds – deaktiviert
-            const backgroundImages = [
-                { url: 'material/image_01.webp', position: '49% 32%' },
-                // { url: 'material/image_02.webp', position: '64% 26%' },
-                // { url: 'material/image_03.webp', position: '50% 50%' },
-                // { url: 'material/image_04.webp', position: '50% 50%' },
-                // { url: 'material/image_05.webp', position: '35% 50%' },
-                // { url: 'material/image_06.webp', position: '50% 50%' }
-                // { url: 'material/image_01.webp', position: '50% 50%' },
-                { url: 'material/image_02.webp', position: '50% 50%' },
-                { url: 'material/image_03.webp', position: '50% 50%' },
-                { url: 'material/image_04.webp', position: '9% 50%' },
-                { url: 'material/image_05.webp', position: '43% 50%' },
-                { url: 'material/image_06.webp', position: '50% 50%' }
-            ];
+            const getBackgroundImages = () => {
+                const isMobile = window.innerWidth < 1000;
+                const baseImages = [
+                    { url: 'material/image_01.webp', position: isMobile ? '49% 32%' : '49% 32%' },
+                    { url: 'material/image_02.webp', position: isMobile ? '50% 50%' : '50% 50%' },
+                    { url: 'material/image_03.webp', position: isMobile ? '50% 50%' : '50% 50%' },
+                    { url: 'material/image_04.webp', position: isMobile ? '9% 50%' : '50% 50%' },
+                    { url: 'material/image_05.webp', position: isMobile ? '43% 50%' : '50% 50%' },
+                    { url: 'material/image_06.webp', position: isMobile ? '50% 50%' : '50% 50%' }
+                ];
+                return baseImages;
+            };
+            
+            let backgroundImages = getBackgroundImages();
+            
+            window.addEventListener('resize', () => {
+                backgroundImages = getBackgroundImages();
+            });
 
             const backgroundEffects = {
                 regular: [
